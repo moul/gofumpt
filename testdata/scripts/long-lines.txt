@@ -1,5 +1,8 @@
-gofumpt -w .
+gofumpt -w foo.go
 cmp foo.go foo.go.golden
+
+gofumpt -d foo.go.golden
+! stdout .
 
 -- foo.go --
 package p
@@ -82,15 +85,18 @@ func _() {
 
 	// Allow splitting at the start of sub-lists too.
 	if err := f(argument1, argument2, argument3, argument4, argument5, argument6, someComplex{
-		argument7, argument8, argument9}); err != nil {
+		argument7, argument8, argument9,
+	}); err != nil {
 		panic(err)
 	}
 	if err := f(argument1, argument2, argument3, argument4, argument5, argument6, &someComplex{
-		argument7, argument8, argument9}); err != nil {
+		argument7, argument8, argument9,
+	}); err != nil {
 		panic(err)
 	}
 	if err := f(argument1, argument2, argument3, argument4, argument5, argument6, []someSlice{
-		argument7, argument8, argument9}); err != nil {
+		argument7, argument8, argument9,
+	}); err != nil {
 		panic(err)
 	}
 }
