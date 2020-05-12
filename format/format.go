@@ -75,13 +75,26 @@ func File(fset *token.FileSet, file *ast.File, goVersion string) {
 	}
 	pre := func(c *astutil.Cursor) bool {
 		f.applyPre(c)
-		if _, ok := c.Node().(*ast.BlockStmt); ok {
+		switch node := c.Node().(type) {
+		case *ast.FieldList:
+			ft, _ := c.Parent().(*ast.FuncType)
+			if ft != nil && ft.Params == node {
+				// TODO: investigate if this is worthwhile
+				// f.longLineExtra = 20
+			}
+			if ft != nil && ft.Results == node {
+				f.longLineExtra = -1
+			}
+		case *ast.BlockStmt:
 			f.blockLevel++
 		}
 		return true
 	}
 	post := func(c *astutil.Cursor) bool {
-		if _, ok := c.Node().(*ast.BlockStmt); ok {
+		switch c.Node().(type) {
+		case *ast.FieldList:
+			f.longLineExtra = 0
+		case *ast.BlockStmt:
 			f.blockLevel--
 		}
 		return true
@@ -89,9 +102,15 @@ func File(fset *token.FileSet, file *ast.File, goVersion string) {
 	astutil.Apply(file, pre, post)
 }
 
-// Multiline nodes which could fit on a single line under this many
-// bytes may be collapsed onto a single line.
+// Multiline nodes which could easily fit on a single line under this many bytes
+// may be collapsed onto a single line.
 const shortLineLimit = 60
+
+// Single-line nodes which take over this many bytes, and could easily be split
+// into two lines of at least its 40%, may be split.
+const longLineBase = 100
+
+// const minSplitLength = 40
 
 var rxOctalInteger = regexp.MustCompile(`\A0[0-7_]+\z`)
 
@@ -101,7 +120,8 @@ type fumpter struct {
 
 	astFile *ast.File
 
-	blockLevel int
+	blockLevel    int
+	longLineExtra int
 
 	goVersion string
 }
@@ -204,6 +224,29 @@ func (f *fumpter) printLength(node ast.Node) int {
 	return int(count) + (f.blockLevel * 8)
 }
 
+func (f *fumpter) tabbedColumn(p token.Pos) int {
+	col := f.Position(p).Column
+
+	// Like in printLength, add an approximation of the indentation level.
+	// Since any existing tabs were already counted as one column, multiply
+	// the level by 7.
+	return col + (f.blockLevel * 7)
+}
+
+func (f *fumpter) lineEnd(line int) token.Pos {
+	if line < 1 {
+		panic("illegal line number")
+	}
+	total := f.LineCount()
+	if line > total {
+		panic("illegal line number")
+	}
+	if line == total {
+		return f.astFile.End()
+	}
+	return f.LineStart(line+1) - 1
+}
+
 // rxCommentDirective covers all common Go comment directives:
 //
 //   //go:        | standard Go directives, like go:noinline
@@ -216,6 +259,8 @@ var rxCommentDirective = regexp.MustCompile(`^([a-z]+:|line\b|export\b|extern\b|
 
 // visit takes either an ast.Node or a []ast.Stmt.
 func (f *fumpter) applyPre(c *astutil.Cursor) {
+	f.splitLongLine(c)
+
 	switch node := c.Node().(type) {
 	case *ast.File:
 		var lastMulti bool
@@ -486,6 +531,55 @@ func (f *fumpter) applyPre(c *astutil.Cursor) {
 				c.Replace(node)
 			}
 		}
+	}
+}
+
+func (f *fumpter) splitLongLine(c *astutil.Cursor) {
+	node := c.Node()
+	if node == nil || f.longLineExtra < 0 {
+		return
+	}
+
+	start := f.Position(node.Pos())
+	end := f.Position(node.End())
+	if c.Index() < 0 || start.Line != end.Line {
+		return
+	}
+	if comp := isComposite(node); comp != nil && len(comp.Elts) > 0 {
+		end = f.Position(comp.Lbrace + 1)
+	}
+	// Like in printLength, add an approximation of the indentation level.
+	// Since any existing tabs were already counted as one column, multiply
+	// the level by 7.
+	startCol := start.Column + f.blockLevel*7
+	endCol := end.Column + f.blockLevel*7
+
+	lineEnd := f.Position(f.lineEnd(start.Line))
+	// We subtract blockLevel to ignore indentation, to match secondLength.
+	firstLength := start.Column - f.blockLevel
+	if firstLength < 0 {
+		panic("negative length")
+	}
+	secondLength := lineEnd.Column - start.Column
+	if secondLength < 0 {
+		panic("negative length")
+	}
+	longLineLimit := longLineBase + f.longLineExtra
+	minSplitLength := int(0.4 * float64(longLineLimit))
+	if startCol > shortLineLimit && endCol > longLineLimit &&
+		firstLength >= minSplitLength && secondLength >= minSplitLength {
+		f.addNewline(node.Pos())
+	}
+}
+
+func isComposite(node ast.Node) *ast.CompositeLit {
+	switch node := node.(type) {
+	case *ast.CompositeLit:
+		return node
+	case *ast.UnaryExpr:
+		return isComposite(node.X) // e.g. &T{}
+	default:
+		return nil
 	}
 }
 
