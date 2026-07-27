@@ -182,28 +182,6 @@ var matrix = [][]int{
 
 </details>
 
-**Multi-line function calls with the opening parenthesis at the end of a line
-should place the closing parenthesis at the start of a line**
-
-<details><summary><i>Example</i></summary>
-
-```go
-result := compute(
-	a,
-	b,
-	c)
-```
-
-```go
-result := compute(
-	a,
-	b,
-	c,
-)
-```
-
-</details>
-
 **Empty field lists should use a single line**
 
 <details><summary><i>Example</i></summary>
@@ -511,6 +489,28 @@ func Foo() (err error) {
 func Foo() (err error) {
 	return err
 }
+```
+
+</details>
+
+**Multi-line function calls with the opening parenthesis at the end of a line
+should place the closing parenthesis at the start of a line**
+
+<details><summary><i>Example</i></summary>
+
+```go
+result := compute(
+	a,
+	b,
+	c)
+```
+
+```go
+result := compute(
+	a,
+	b,
+	c,
+)
 ```
 
 </details>

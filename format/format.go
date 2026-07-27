@@ -83,6 +83,10 @@ type Extra struct {
 
 	// ClotheReturns clothes naked returns in functions with named results.
 	ClotheReturns bool
+
+	// BalanceCalls places a multi-line call's closing parenthesis on its
+	// own line when the opening parenthesis ends a line.
+	BalanceCalls bool
 }
 
 func (e *Extra) String() string {
@@ -93,6 +97,9 @@ func (e *Extra) String() string {
 	if e.ClotheReturns {
 		active = append(active, "clothe_returns")
 	}
+	if e.BalanceCalls {
+		active = append(active, "balance_calls")
+	}
 	return strings.Join(active, ",")
 }
 
@@ -100,6 +107,7 @@ func (e *Extra) Set(v string) error {
 	if v == "true" {
 		e.GroupParams = true
 		e.ClotheReturns = true
+		e.BalanceCalls = true
 		return nil
 	}
 	*e = Extra{}
@@ -112,6 +120,8 @@ func (e *Extra) Set(v string) error {
 			e.GroupParams = true
 		case "clothe_returns":
 			e.ClotheReturns = true
+		case "balance_calls":
+			e.BalanceCalls = true
 		default:
 			return fmt.Errorf("unknown rule: %q", s)
 		}
@@ -998,6 +1008,9 @@ func (f *fumpter) applyPost(c *astutil.Cursor) {
 	// line, the closing parenthesis should be at the start of a line.
 	// See https://github.com/mvdan/gofumpt/issues/74.
 	case *ast.CallExpr:
+		if !f.Extra.BalanceCalls {
+			break
+		}
 		if len(node.Args) == 0 {
 			break
 		}

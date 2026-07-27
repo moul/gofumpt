@@ -82,7 +82,7 @@ package p
 -- foo.go.golden-extra --
 package p
 
-//gofumpt:diagnose version: (devel) (go1.18.29) flags: -lang=go1.16 -modpath=test -extra=group_params,clothe_returns
+//gofumpt:diagnose version: (devel) (go1.18.29) flags: -lang=go1.16 -modpath=test -extra=group_params,clothe_returns,balance_calls
 -- foo.go.golden-extra-false --
 package p
 

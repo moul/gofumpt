@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-Narrow the multi-line function call rule to only place the closing parenthesis
-on its own line when the opening parenthesis ends a line. See #74.
+The multi-line function call rule introduced in v0.10.0 proved controversial,
+so it is now the extra rule `balance_calls`, disabled by default.
+It is also narrowed to only place the closing parenthesis on its own line
+when the opening parenthesis ends a line. See #74.
 
 Avoid crashing when compiled with tinygo for Wasm, which lacks recover support,
 by detecting commented-out code without the parser's bailout panic. See #230.

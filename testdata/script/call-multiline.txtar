@@ -1,7 +1,11 @@
-exec gofumpt -w foo.go
+# The rule is only enabled via -extra.
+exec gofumpt -d foo.go
+! stdout .
+
+exec gofumpt -extra=balance_calls -w foo.go
 cmp foo.go foo.go.golden
 
-exec gofumpt -d foo.go.golden
+exec gofumpt -extra=balance_calls -d foo.go.golden
 ! stdout .
 
 -- foo.go --
