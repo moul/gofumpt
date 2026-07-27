@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## [v0.11.0] - 2026-07-27
+
+Like v0.10.0, this release is based on Go 1.26's gofmt, and requires Go 1.25 or later.
 
 The multi-line function call rule introduced in v0.10.0 proved controversial,
 so it is now the extra rule `balance_calls`, disabled by default.
@@ -227,6 +229,7 @@ those building programs with gofumpt.
 Finally, this release adds the `-version` flag, to print the tool's own version.
 The flag will work for "master" builds too.
 
+[v0.11.0]: https://github.com/mvdan/gofumpt/releases/tag/v0.11.0
 [v0.10.0]: https://github.com/mvdan/gofumpt/releases/tag/v0.10.0
 [v0.9.0]: https://github.com/mvdan/gofumpt/releases/tag/v0.9.0
 [v0.8.0]: https://github.com/mvdan/gofumpt/releases/tag/v0.8.0
